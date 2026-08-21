@@ -1,9 +1,7 @@
 // Lokalt (python -m http.server) pekar vi mot backend på localhost;
 // på Netlify (eller någon annan icke-lokal host) pekar vi mot den
-// publika backend-URL:en istället. TODO: byt ut PRODUCTION_BACKEND_URL
-// mot den riktiga URL:en (typ https://<tjänst>.onrender.com) när backend
-// är deployad.
-const PRODUCTION_BACKEND_URL = "https://REPLACE_WITH_BACKEND_URL";
+// publika backend-URL:en istället (Render).
+const PRODUCTION_BACKEND_URL = "https://hannassvamp.onrender.com";
 const API_BASE_URL = ["localhost", "127.0.0.1"].includes(window.location.hostname)
   ? "http://localhost:8000"
   : PRODUCTION_BACKEND_URL;
