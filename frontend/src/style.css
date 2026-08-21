@@ -81,13 +81,6 @@ body {
   padding: 1.25rem 1.4rem;
 }
 
-.title-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
 .title-card h1 {
   margin: 0;
   font-family: var(--font-serif);
@@ -95,31 +88,6 @@ body {
   font-weight: 400;
   line-height: 1.1;
   color: var(--text-primary);
-}
-
-/* Bara synlig på små skärmar (se media query nedan) — på desktop finns
-   gott om plats så panelen är alltid utfälld och knappen onödig. */
-.filter-panel-toggle {
-  display: none;
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  align-items: center;
-  justify-content: center;
-  font: inherit;
-  color: var(--text-secondary);
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.filter-panel-toggle-icon {
-  transition: transform 0.15s ease;
-}
-
-.filter-panel-toggle[aria-expanded="true"] .filter-panel-toggle-icon {
-  transform: rotate(180deg);
 }
 
 .title-card p {
@@ -133,6 +101,12 @@ body {
    separata <p> i index.html istället för ett långt textblock. */
 .title-card p + p {
   margin-top: 0.9rem;
+}
+
+/* Kort ersättningstext för mobil (se media query nedan) — döljs på
+   desktop där de tre fullständiga styckena ovan visas istället. */
+.title-card-summary {
+  display: none;
 }
 
 .chips-card {
@@ -206,16 +180,65 @@ body {
   display: none;
 }
 
-/* Under 640px täcker filterpanelen (fullt utfälld) nästan hela kartan
-   på en mobilskärm — fälls därför ihop till bara titelraden som
-   standard (se .is-collapsed på #filter-panel i index.html), med en
-   knapp för att fälla ut den igen vid behov. */
+/* Under 640px: kortare text (en rad istället för tre stycken) och
+   artfiltret som en kompakt, horisontellt skrollbar rad istället för en
+   vertikal lista — så panelen tar mycket mindre höjd men artfiltret
+   ändå alltid är synligt och klickbart, till skillnad från den
+   tidigare ihopfällningsknappen som gömde det helt. */
 @media (max-width: 640px) {
-  .filter-panel-toggle {
-    display: flex;
+  #filter-panel {
+    width: calc(100vw - 32px);
   }
 
-  #filter-panel.is-collapsed .chips-card {
+  .title-card {
+    padding: 1rem 1.1rem;
+  }
+
+  .title-card h1 {
+    font-size: 1.5rem;
+  }
+
+  .title-card p {
+    display: none;
+  }
+
+  /* Högre specificitet (id + klass) än ".title-card p" ovan, som annars
+     vinner trots att den här kommer senare i källkoden och tar bort
+     sammanfattningen igen (samma p-element matchar båda selektorerna). */
+  #filter-panel .title-card-summary {
+    display: block;
+  }
+
+  .chips-card {
+    padding: 0.7rem 0.8rem 0.8rem;
+  }
+
+  .species-chips {
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .species-chip-group {
+    flex-shrink: 0;
+  }
+
+  .species-chip {
+    width: auto;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  .species-chip-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Förklarande fotnot ("inga tydliga platser just nu...") är för lång
+     för en smal, horisontell rad — samma information finns ändå kvar
+     om man trycker på "Så funkar det". */
+  .species-chip-note {
     display: none;
   }
 }
