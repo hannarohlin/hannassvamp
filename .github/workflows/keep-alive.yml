@@ -1,9 +1,14 @@
 name: Håll backend vaken
 
-# Pingar Render-backendens /health var 10:e minut (under Renders
-# 15-minuters-gräns för att somna) så att den ackumulerande disk-cachen
-# aldrig nollställs av att containern stängs av/startas om i onödan —
-# se README "Prestanda och robusthet".
+# Anropar Render-backendens /api/predictions (hela översikten) var 10:e
+# minut — under Renders 15-minuters-gräns för att somna, OCH detta
+# värmer samtidigt upp den riktiga NMD/SGU/väder-cachen istället för
+# att bara pinga /health. Utan detta kan en riktig besökare möta en
+# helt kall cache (~35-60s, se README "Prestanda och robusthet") varje
+# gång containern startats om (t.ex. efter en backend-deploy) —
+# nu görs den kostnaden här i bakgrunden istället, inte hos besökaren.
+# Cachens långa TTL:er (NMD 30 dygn, SGU 90 dygn) gör att detta
+# jobb i praktiken svarar snabbt (~0,2s) så fort cachen väl är varm.
 on:
   schedule:
     - cron: "*/10 * * * *"
@@ -13,5 +18,5 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Pinga /health
-        run: curl -sf https://hannassvamp.onrender.com/health
+      - name: Värm /api/predictions
+        run: curl -sf --max-time 120 https://hannassvamp.onrender.com/api/predictions -o /dev/null
