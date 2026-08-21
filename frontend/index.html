@@ -33,9 +33,20 @@
         <span>Laddar detaljvy...</span>
       </div>
 
-      <div id="filter-panel">
+      <div id="filter-panel" class="is-collapsed">
         <div class="panel-card title-card">
-          <h1>Hannas svampkarta</h1>
+          <div class="title-card-header">
+            <h1>Hannas svampkarta</h1>
+            <button
+              id="filter-panel-toggle"
+              class="filter-panel-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="filter-panel"
+            >
+              <span class="filter-panel-toggle-icon" aria-hidden="true">▾</span>
+            </button>
+          </div>
           <p>En karta som visar vart du kan hitta kantarell, trattkantarell, svart-och rödgul trumpetsvamp. Zooma in på kartan för att se en mer detaljerad vy.</p>
         </div>
 

@@ -672,6 +672,22 @@ function initCellPanel() {
   closeButton.addEventListener("click", closeCellPanel);
 }
 
+// Filterpanelen startar ihopfälld på små skärmar (se .is-collapsed i
+// index.html/style.css) eftersom den annars täcker nästan hela kartan
+// på mobil — knappen fäller ut/in den. Ren CSS-klass-toggle: knappen
+// döljs helt över brytpunkten (640px) i style.css, så det här är
+// ofarligt att koppla in oavsett skärmstorlek.
+function initFilterPanel() {
+  const panel = document.getElementById("filter-panel");
+  const toggle = document.getElementById("filter-panel-toggle");
+  if (!panel || !toggle) return;
+  toggle.addEventListener("click", () => {
+    const collapsed = panel.classList.toggle("is-collapsed");
+    toggle.setAttribute("aria-expanded", String(!collapsed));
+  });
+}
+
 initInfoDialog();
 initCellPanel();
+initFilterPanel();
 init();
