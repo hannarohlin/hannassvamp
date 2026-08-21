@@ -200,25 +200,6 @@ body {
   display: none;
 }
 
-.legend-card {
-  padding: 0.9rem 1.1rem 1rem;
-}
-
-.probability-gradient {
-  margin-top: 0.6rem;
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(47, 107, 79, 0.1), var(--accent));
-}
-
-.probability-gradient-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.4rem;
-  font-size: 0.72rem;
-  color: var(--text-secondary);
-}
-
 /* Under 640px täcker filterpanelen (fullt utfälld) nästan hela kartan
    på en mobilskärm — fälls därför ihop till bara titelraden som
    standard (se .is-collapsed på #filter-panel i index.html), med en
@@ -228,8 +209,7 @@ body {
     display: flex;
   }
 
-  #filter-panel.is-collapsed .chips-card,
-  #filter-panel.is-collapsed .legend-card {
+  #filter-panel.is-collapsed .chips-card {
     display: none;
   }
 }
