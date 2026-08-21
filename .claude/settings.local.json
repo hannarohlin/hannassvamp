@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 *)",
+      "Bash(curl *)",
+      "WebFetch(domain:opendata.smhi.se)",
+      "Bash(deactivate)",
+      "Read(//opt/homebrew/**)",
+      "WebFetch(domain:skogsdatalabbet.se)",
+      "WebFetch(domain:www.skogsstyrelsen.se)"
+    ]
+  }
+}

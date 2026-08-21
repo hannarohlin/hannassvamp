@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hannas svampkarta</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Instrument+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="src/style.css" />
+  </head>
+  <body>
+    <div id="map-wrapper">
+      <div id="map"></div>
+
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Laddar prognosdata... kan ta upp till någon minut vid första laddningen.</p>
+      </div>
+
+      <div id="detail-loading" class="detail-loading">
+        <div class="spinner spinner-sm"></div>
+        <span>Laddar detaljvy...</span>
+      </div>
+
+      <div id="filter-panel">
+        <div class="panel-card title-card">
+          <h1>Hannas svampkarta</h1>
+          <p>Ett index för hur goda förutsättningarna är för gul kantarell, trattkantarell, svart trumpetsvamp och rödgul trumpetsvamp i skogsmark.</p>
+        </div>
+
+        <div class="panel-card chips-card">
+          <strong class="panel-label">Visa arter</strong>
+          <div id="species-chips" class="species-chips"></div>
+        </div>
+
+        <div class="panel-card legend-card">
+          <strong class="panel-label">Svampindex</strong>
+          <div class="probability-gradient"></div>
+          <div class="probability-gradient-labels">
+            <span>Låg</span>
+            <span>Hög</span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        id="info-button"
+        class="info-button"
+        type="button"
+        aria-haspopup="dialog"
+        aria-controls="info-dialog"
+      >
+        <span class="info-button-icon" aria-hidden="true">i</span>
+        Så funkar det
+      </button>
+
+      <div id="cell-panel" class="cell-panel hidden">
+        <button id="cell-panel-close" class="cell-panel-close" type="button" aria-label="Stäng">✕</button>
+        <h2 id="cell-panel-title">Vald plats</h2>
+        <div id="cell-panel-rows" class="cell-panel-rows"></div>
+        <div class="cell-panel-basis">
+          <strong class="panel-label">Underlag</strong>
+          <div class="basis-tags">
+            <span class="basis-tag">Väder · SMHI</span>
+            <span class="basis-tag">Skogstyp · Naturvårdsverket</span>
+            <span class="basis-tag">Jordart · SGU</span>
+            <span class="basis-tag">Fynd · Artportalen</span>
+          </div>
+          <p class="cell-panel-disclaimer">
+            Indexet (0–100) beskriver hur goda förutsättningarna verkar vara — det är INTE en
+            sannolikhet i procent. Nålen markerar områdets mittpunkt, inte en exakt fyndplats.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div id="info-dialog" class="info-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="info-dialog-title">
+      <div class="info-panel">
+        <button id="info-close" class="info-close" type="button" aria-label="Stäng">✕</button>
+        <h2 id="info-dialog-title">Så fungerar kartan</h2>
+        <p>
+          De mjuka fälten visar ett <strong>index (0–100) för hur goda
+          förutsättningarna är</strong> — INTE en sannolikhet i procent. Vårt
+          underlag (en region, ett begränsat antal verifierade fynd) har inte
+          den statistiska styrkan som krävs för att kalla det en validerad
+          sannolikhet. Nålen markerar områdets mittpunkt — inte en exakt
+          fyndplats — och visar den art som har högst index just där. Använd
+          kartan för att jämföra områden, inte för att hitta en exakt
+          växtplats, och bedöm alltid skogen på plats: kartan fångar inte
+          varje stig, hygge eller lokal markstörning.
+        </p>
+
+        <h3>Var trivs de?</h3>
+        <ul>
+          <li><strong>Gul kantarell</strong> — barrblandskog och barrskog med lövinslag, helst på torrare till medelfuktig mark.</li>
+          <li><strong>Trattkantarell</strong> — fuktig, mossrik granskog eller barrblandskog; tål våtmark bäst av alla fyra.</li>
+          <li><strong>Svart trumpetsvamp</strong> — lövskog och ädellövskog (bok, ek, hassel); trivs dåligt i ren barrskog.</li>
+          <li><strong>Rödgul trumpetsvamp</strong> — fuktig, kalkrik barrskog, ofta vid myrkanter och i mossa; en annan art än svart trumpetsvamp, inte en färgvariant.</li>
+        </ul>
+
+        <h3>Väder</h3>
+        <p>
+          Vi räknar ihop hur nederbörd och temperatur har utvecklats de
+          senaste ~3 veckorna till en ackumulerad, avklingande markfuktighet
+          — inte bara gårdagens väder — eftersom svampens respons på regn är
+          fördröjd. Alla fyra gynnas av fuktig mark och en medeltemperatur
+          mellan 10–20°C.
+        </p>
+
+        <h3>Säsong</h3>
+        <p>
+          Indexet justeras ner utanför artens högsäsong, baserat på när
+          historiska fynd faktiskt har rapporterats (inte en gissad
+          kalender). Gul kantarell toppar i september i den här regionen,
+          övriga tre i september–oktober — alla fyra är i praktiken
+          frånvarande december–juni.
+        </p>
+
+        <h3>Vilken data baseras det på?</h3>
+        <ul>
+          <li>Väderdata (nederbörd, temperatur) från SMHI</li>
+          <li>Marktäckedata (skogstyp) från Naturvårdsverkets Nationella marktäckedata (NMD)</li>
+          <li>Jordart (morän, lera, isälvssediment m.m.) från SGU — kompletterar skogstypen, bland annat för kalkgynnade arter</li>
+          <li>Historiska fynd från Artportalen — används för att åldersvikta kända platser och för att forma säsongen ovan</li>
+        </ul>
+      </div>
+    </div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="src/api.js"></script>
+    <script src="src/map.js"></script>
+  </body>
+</html>
