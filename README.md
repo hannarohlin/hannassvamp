@@ -38,7 +38,10 @@ infomodal/disclaimer för hur detta kommuniceras till användaren.
 Talet byggs av tre delar:
 - **Väder** — en RULLANDE fuktmodell (inte en enskild dags mätvärde),
   se "Väder: rullande fuktmodell" nedan.
-- **Skogstyp** — NMD:s trädslagsklassning, artspecifik (se ovan).
+- **Skogstyp** — NMD:s trädslagsklassning, artspecifik (se ovan),
+  nudgad av SGU:s jordart (se "Jordart" nedan) — inte en egen fjärde
+  regressionsvariabel, utan en multiplikator (0.7–1.3) på just den här
+  poängen.
 - **Historik** — Artportalens fynd, åldersviktade (se
   `app.data_sources.artportalen.RECENCY_HALF_LIFE_YEARS`).
 - **Säsong** — en multiplikativ faktor byggd från fyndens faktiska
@@ -245,24 +248,12 @@ att räkna bakåt från för ett fynd gjort 2015) — samma typ av
 proxy-mismatch som redan gäller för `history_score`/åldersviktningen,
 inte en ny sorts brist.
 
-**PTHBV-lucka upptäckt och fixad vid den ursprungliga körningen:**
-enstaka punkter/månader saknar värde (`null`) i PTHBV:s arkiv (samma
-typ av lucka som i det dagliga arkivet, se "Väder: rullande
-fuktmodell") — `smhi.extract_month` kraschade tidigare på detta
-(`TypeError` vid jämförelse mot `None`). Fixat genom att behandla en
-`null`-månad som "data saknas" (samma neutrala fallback som en helt
-saknad månad), istället för att låta felet propagera och avbryta hela
-kalibreringen.
-
-**Saknad retry upptäckt och fixad vid 600-körningen:**
-`fetch_historical_monthly` skapade tidigare en NY `httpx.AsyncClient`
-per anrop och saknade retry/backoff helt — ett enda `httpx.ReadError`
-(SMHI-anrop är i praktiken något flakiga, samma erfarenhet som med
-NMD/dagliga PTHBV-arkivet) kunde krascha hela körningen efter flera
-minuters arbete, utan att kunna återhämta sig. Fixat genom att dela
-klient/semafor med den rullande dagliga modellen (samma SMHI-domän) —
-ger både connection pooling och samma retry-mönster som resten av
-modulen redan hade.
+`scripts/calibrate_weights.py` hanterar två egenheter hos PTHBV:s
+arkiv: enstaka punkter/månader saknar värde (`null`), vilket
+`smhi.extract_month` behandlar som "data saknas" snarare än att
+krascha på en `None`-jämförelse; och `fetch_historical_monthly` delar
+klient/semafor (med retry/backoff) med den rullande dagliga modellen
+istället för att öppna en ny anslutning per anrop.
 
 ## Väder: rullande fuktmodell (`app/data_sources/smhi.py`)
 
@@ -286,11 +277,9 @@ som ska vara "minnesfullt".
 har en hård gräns på 100 punkter per anrop (fler ger ett 400-fel) OCH
 tål påfallande dåligt många SMÅ anrop i snabb följd oavsett egen
 samtidighetsgräns — 77 SAMTIDIGA en-punkts-anrop tog 62 SEKUNDER, mot
-~3,5s för ETT batchat 100-punkters-anrop. En första implementation som
-frågade per prediktionscell (`fetch_recent_daily_weather`) gjorde en
-enda zoom-detaljförfrågan ta över en minut, ibland med krasch när enskilda
-PTHBV-punkter (t.ex. i skärgården) saknade värde (`null`) för vissa
-dagar. Löst i två steg:
+~3,5s för ETT batchat 100-punkters-anrop. Att fråga per prediktionscell
+istället för per väder-rutnät skulle alltså göra en enda
+zoom-detaljförfrågan ta över en minut. Löst i två steg:
 1. **Batchning** (`fetch_recent_daily_weather_batch` i smhi.py): upp
    till 100 punkter per PTHBV-anrop, matchat mot svarets egna
    `north`/`east`-fält (inte positionell ordning).
@@ -302,10 +291,10 @@ dagar. Löst i två steg:
    optimering — PTHBV:s egen upplösning gör att en finare fråga ändå
    bara skulle returnera samma underliggande värde om och om igen.
 
-Resultat efter fixen (verifierat): en tidigare 54,8s zoom-detaljförfrågan
-tog 2,1s med varm väder-cache. En kall översiktsförfrågan (hela
-regionen, ~800 väder-rutor) tar ~30-35s — inom den redan existerande
-"kan ta upp till någon minut"-förväntan i startskärmen.
+Resultat: en zoom-detaljförfrågan tar ~2,1s med varm väder-cache. En
+kall översiktsförfrågan (hela regionen, ~800 väder-rutor) tar ~30-35s —
+inom den redan existerande "kan ta upp till någon minut"-förväntan i
+startskärmen.
 
 ## Jordart (`app/data_sources/sgu.py`)
 
@@ -344,13 +333,12 @@ klasser som FAKTISKT förekommer i regionen (stickprov över 36 punkter:
 morän-varianter, lera-varianter, isälvssediment, urberg, torv,
 fyllning) — inte statistiskt skattade.
 
-**Bugg hittad och fixad vid integrationen:** en jordarts-hink (~5km)
-kan råka delas mellan en skogscell och en näraliggande sjö, så SGU kan
-svara "Vatten" för en cell NMD redan klassat som skog — verifierat i
-praktiken. `sgu.soil_label_to_phrase` filtrerar bort "vatten"
-(`soil_factor` påverkas inte, ingen preferensklass matchar det ordet),
-annars hade förklaringstexten kunnat säga det motsägelsefulla
-"skogstyp (lövskog, vatten)".
+En jordarts-hink (~5km) kan råka delas mellan en skogscell och en
+näraliggande sjö, så SGU kan svara "Vatten" för en cell NMD redan
+klassat som skog — verifierat i praktiken. `sgu.soil_label_to_phrase`
+filtrerar därför bort "vatten" ur förklaringstexten (`soil_factor`
+påverkas inte, ingen preferensklass matchar det ordet), annars hade
+den kunnat säga det motsägelsefulla "skogstyp (lövskog, vatten)".
 
 ## Säsong (`app/services/season.py`)
 
@@ -389,11 +377,17 @@ samtidighet, så:
   (connection pooling) istället för en ny klient per anrop.
 - NMD-anrop begränsas av en semafor (40 samtidiga) — högre värden (100)
   gav 500-fel i tester.
-- Enskilda NMD/SMHI-anrop som misslyckas får 2 omförsök med backoff
+- Enskilda NMD/SGU/SMHI-anrop som misslyckas får 2 omförsök med backoff
   innan de faller tillbaka till ett neutralt score, istället för att
   krascha hela requesten.
 - Väder hämtas EN gång per rutcell (inte per art) eftersom det inte är
   artspecifikt.
+- `_get_land_cover_labels`/`_get_soil_labels`/`_get_weather_details` i
+  `prediction.py` fångar även OVÄNTADE fel (t.ex. trasig JSON i ett
+  enskilt NMD/SGU/SMHI-svar, inte bara `httpx.HTTPError`) runt varje
+  punktförfrågan — en enskild punkt utan giltigt svar faller tillbaka
+  på "okänt" (`None`) istället för att ta ner hela
+  `/api/predictions`-anropet. Se `backend/tests/test_prediction_robustness.py`.
 
 ### Cache (`app/services/cache.py`)
 
@@ -452,8 +446,12 @@ synliga ytan när man zoomar in förbi `DETAIL_ZOOM_THRESHOLD` (nivå 10),
 debouncat 500ms efter att man slutat panorera/zooma (`moveend`), med en
 liten diskret laddningsindikator (`#detail-loading`) — inte den stora
 helskärms-spinnern, eftersom detaljvyn kompletterar översikten snarare
-än att blockera den. Ett monotont request-id skyddar mot race conditions
-om man zoomar/panorerar vidare innan ett svar hunnit komma tillbaka.
+än att blockera den. Zoomar/panorerar man vidare innan ett svar hunnit
+komma tillbaka avbryts det pågående anropet direkt (`AbortController`
+i `updateDetailView`, se `frontend/src/api.js`) och ersätts av ett nytt
+för den senaste ytan, istället för att köa och vänta in det gamla — ett
+monotont request-id är kvar som ett andra skydd mot det osannolika
+racet där ett svar hinner in innan avbrottet slår igenom.
 
 **Upplösningen skalar med zoomnivå (`resolutionForZoom` i `map.js`)** —
 tidigare begärdes samma FASTA upplösning (`detail_resolution_deg`,
@@ -468,22 +466,15 @@ gång: en mjukare övergång vid tröskeln (~1.6km-rutor precis vid nivå
 markeringar ju mer man zoomar in, istället för att fastna på samma
 upplösning från och med tröskeln.
 
-**Känd incident (löst):** i tidiga tester hängde backend helt (100% CPU
-i flera minuter, även `/health` slutade svara) efter att en användare
-zoomat/panorerat några gånger i rad. Grundorsaken var att frontend inte
-hindrade flera överlappande, tunga detaljanrop från att köras samtidigt
-mot backend — varje zoom/pan-steg startade ett NYTT anrop utan att
-vänta in eller avbryta det föregående. Fixat med två skydd:
-  1. Frontend (`detailFetchInFlight`/`detailUpdateQueued` i `map.js`)
-     kör aldrig mer än ett detaljanrop åt gången — nya triggers under
-     tiden kö:as till EN uppdatering (med då aktuell yta) efter att det
-     pågående anropet svarat.
-  2. Backend fick en samtidighetsgräns för SMHI (samma mönster som NMD
-     redan hade) och `detail_max_cells` sänktes 1200→500, som
-     värsta-fall-skydd även om frontend-skyddet skulle brista.
-Verifierat genom att medvetet skicka 4 överlappande tunga anrop
-samtidigt mot backend efter fixen — alla fyra slutförde (55–78s,
-långsamt men stabilt), CPU gick tillbaka till ~0% direkt efteråt.
+Flera överlappande, tunga detaljanrop mot backend samtidigt (t.ex. några
+snabba zoom/pan-steg i rad) kan annars bygga upp tillräckligt mycket
+samtidig NMD/SMHI-belastning för att hänga hela servern. Två skydd mot
+det:
+  1. Frontend avbryter alltid det föregående detaljanropet (se ovan)
+     innan nästa skickas — aldrig fler än ett igång samtidigt.
+  2. Backend har en samtidighetsgräns för SMHI (samma mönster som NMD)
+     och `detail_max_cells` (500), som värsta-fall-skydd även om
+     frontend-skyddet skulle brista.
 
 ## Nästa steg
 

@@ -228,13 +228,13 @@ let detailFetchTimer = null;
 let latestDetailRequestId = 0;
 // Skydd mot att flera tunga detaljanrop körs samtidigt mot backend: om
 // användaren zoomar/panorerar flera gånger på kort tid (fullt normalt)
-// väntar vi tills det PÅGÅENDE anropet är klart innan nästa skickas,
-// istället för att skicka ett nytt ovanpå det gamla. Utan det här kan
-// flera överlappande, tunga beräkningar (tusentals vädersökningar +
-// historikjämförelser vardera) byggas upp på backend samtidigt, vilket
-// vi såg hänga hela servern (100% CPU i flera minuter).
-let detailFetchInFlight = false;
-let detailUpdateQueued = false;
+// AVBRYTS det pågående anropet direkt (via AbortController) och ersätts
+// av ett nytt för den senaste ytan, istället för att köa och vänta in
+// det gamla — annars jagar kartan alltid en yta man redan lämnat. Utan
+// något skydd här kan flera överlappande, tunga beräkningar (tusentals
+// vädersökningar + historikjämförelser vardera) byggas upp på backend
+// samtidigt, vilket vi såg hänga hela servern (100% CPU i flera minuter).
+let detailAbortController = null;
 
 function currentCombinedCells() {
   return detailCombinedCells ?? overviewCombinedCells;
@@ -542,13 +542,13 @@ function setDetailLoading(isLoading) {
 }
 
 async function updateDetailView() {
-  if (detailFetchInFlight) {
-    // Ett anrop pågår redan — kö:a bara att vi vill uppdatera igen när
-    // det är klart (med då aktuell zoom/bounds), istället för att
-    // skicka ett nytt tungt anrop ovanpå det gamla.
-    console.log("[detaljvy] anrop redan pågående, köar ny uppdatering");
-    detailUpdateQueued = true;
-    return;
+  if (detailAbortController) {
+    // Ett tidigare detaljanrop är fortfarande inflight (t.ex. flera
+    // snabba zoom/pan-steg i rad) — avbryt det direkt istället för att
+    // vänta in det, så att kartan alltid jagar den SENASTE synliga ytan.
+    console.log("[detaljvy] avbryter tidigare inaktuellt anrop");
+    detailAbortController.abort();
+    detailAbortController = null;
   }
 
   const zoom = map.getZoom();
@@ -561,8 +561,9 @@ async function updateDetailView() {
     return;
   }
 
-  detailFetchInFlight = true;
   const requestId = ++latestDetailRequestId;
+  const controller = new AbortController();
+  detailAbortController = controller;
   setDetailLoading(true);
   const bounds = map.getBounds();
   const resolutionDeg = resolutionForZoom(zoom);
@@ -571,11 +572,13 @@ async function updateDetailView() {
   );
 
   try {
-    const data = await fetchPredictions({ bounds, resolution: resolutionDeg });
+    const data = await fetchPredictions({ bounds, resolution: resolutionDeg, signal: controller.signal });
     console.log(`[detaljvy] svar mottaget, ${data.species[0]?.cells.length ?? 0} celler/art`);
 
-    // Om användaren redan zoomat/panorerat vidare sen den här
-    // förfrågan skickades är svaret inaktuellt — kasta det.
+    // Bältet-och-hängslena-koll: AbortController bör redan ha förhindrat
+    // att vi hamnar här med ett inaktuellt svar, men skyddar även mot
+    // det osannolika race där svaret hann komma in innan abort() slog
+    // igenom.
     if (requestId !== latestDetailRequestId) {
       console.log("[detaljvy] inaktuellt svar, ignorerar");
       return;
@@ -585,15 +588,14 @@ async function updateDetailView() {
     renderAll();
     console.log("[detaljvy] renderad klart");
   } catch (error) {
+    if (error.name === "AbortError") {
+      console.log("[detaljvy] anrop avbrutet (ersatt av ett nyare)");
+      return;
+    }
     console.error("[detaljvy] FEL vid hämtning:", error);
   } finally {
-    detailFetchInFlight = false;
+    if (detailAbortController === controller) detailAbortController = null;
     if (requestId === latestDetailRequestId) setDetailLoading(false);
-
-    if (detailUpdateQueued) {
-      detailUpdateQueued = false;
-      scheduleDetailUpdate();
-    }
   }
 }
 

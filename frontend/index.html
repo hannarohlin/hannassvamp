@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hannas svampkarta</title>
+    <title>Hannas Svampkarta</title>
+    <link rel="icon" type="image/png" href="images/gulkantarell.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -35,7 +36,7 @@
       <div id="filter-panel">
         <div class="panel-card title-card">
           <h1>Hannas svampkarta</h1>
-          <p>Ett index för hur goda förutsättningarna är för gul kantarell, trattkantarell, svart trumpetsvamp och rödgul trumpetsvamp i skogsmark.</p>
+          <p>En karta som visar vart du kan hitta kantarell, trattkantarell, svart-och rödgul trumpetsvamp. Zooma in på kartan för att se en mer detaljerad vy.</p>
         </div>
 
         <div class="panel-card chips-card">
@@ -77,7 +78,7 @@
             <span class="basis-tag">Fynd · Artportalen</span>
           </div>
           <p class="cell-panel-disclaimer">
-            Indexet (0–100) beskriver hur goda förutsättningarna verkar vara — det är INTE en
+            Indexet (0–100) beskriver hur goda förutsättningarna verkar vara, det är inte en
             sannolikhet i procent. Nålen markerar områdets mittpunkt, inte en exakt fyndplats.
           </p>
         </div>
@@ -89,49 +90,45 @@
         <button id="info-close" class="info-close" type="button" aria-label="Stäng">✕</button>
         <h2 id="info-dialog-title">Så fungerar kartan</h2>
         <p>
-          De mjuka fälten visar ett <strong>index (0–100) för hur goda
-          förutsättningarna är</strong> — INTE en sannolikhet i procent. Vårt
-          underlag (en region, ett begränsat antal verifierade fynd) har inte
-          den statistiska styrkan som krävs för att kalla det en validerad
-          sannolikhet. Nålen markerar områdets mittpunkt — inte en exakt
-          fyndplats — och visar den art som har högst index just där. Använd
+          Markeringarna på kartan visar ett <strong>index (0–100) för hur goda
+          förutsättningarna är</strong> inte en sannolikhet i procent. Nålen markerar områdets mittpunkt — inte en exakt
+          fyndplats och visar den art som har högst index just där. Använd
           kartan för att jämföra områden, inte för att hitta en exakt
           växtplats, och bedöm alltid skogen på plats: kartan fångar inte
-          varje stig, hygge eller lokal markstörning.
+          varje stig eller lokal markstörning.
         </p>
 
         <h3>Var trivs de?</h3>
         <ul>
-          <li><strong>Gul kantarell</strong> — barrblandskog och barrskog med lövinslag, helst på torrare till medelfuktig mark.</li>
-          <li><strong>Trattkantarell</strong> — fuktig, mossrik granskog eller barrblandskog; tål våtmark bäst av alla fyra.</li>
-          <li><strong>Svart trumpetsvamp</strong> — lövskog och ädellövskog (bok, ek, hassel); trivs dåligt i ren barrskog.</li>
-          <li><strong>Rödgul trumpetsvamp</strong> — fuktig, kalkrik barrskog, ofta vid myrkanter och i mossa; en annan art än svart trumpetsvamp, inte en färgvariant.</li>
+          <li><strong>Kantarell</strong> — barrblandskog och barrskog med lövinslag, helst på torrare till medelfuktig mark; gynnas av väldränerad, näringsfattig jord (isälvssediment/sandig morän), ogynnas av lera och torv.</li>
+          <li><strong>Trattkantarell</strong> — fuktig, mossrik granskog eller barrblandskog; tål våtmark bäst av alla fyra; trivs bäst på fuktighetshållande morän, varken för torrt (isälvssediment) eller för blött (ren torv).</li>
+          <li><strong>Svart trumpetsvamp</strong> — lövskog och ädellövskog (bok, ek, hassel); trivs dåligt i ren barrskog; kalkgynnad, gynnas av näringsrik lera/lerig morän.</li>
+          <li><strong>Rödgul trumpetsvamp</strong> — fuktig, kalkrik barrskog, ofta vid myrkanter och i mossa; av de fyra starkast knuten till lera/torv.</li>
         </ul>
 
         <h3>Väder</h3>
         <p>
           Vi räknar ihop hur nederbörd och temperatur har utvecklats de
           senaste ~3 veckorna till en ackumulerad, avklingande markfuktighet
-          — inte bara gårdagens väder — eftersom svampens respons på regn är
-          fördröjd. Alla fyra gynnas av fuktig mark och en medeltemperatur
+          eftersom svampens respons på regn är fördröjd. 
+          Alla fyra gynnas av fuktig mark och en medeltemperatur
           mellan 10–20°C.
         </p>
 
         <h3>Säsong</h3>
         <p>
           Indexet justeras ner utanför artens högsäsong, baserat på när
-          historiska fynd faktiskt har rapporterats (inte en gissad
-          kalender). Gul kantarell toppar i september i den här regionen,
-          övriga tre i september–oktober — alla fyra är i praktiken
-          frånvarande december–juni.
+          historiska fynd faktiskt har rapporterats. Kantarell toppar i september i den här regionen och
+          övriga tre i september–oktober. Alla fyra är i praktiken
+          frånvarande mellan december–juni.
         </p>
 
         <h3>Vilken data baseras det på?</h3>
         <ul>
           <li>Väderdata (nederbörd, temperatur) från SMHI</li>
           <li>Marktäckedata (skogstyp) från Naturvårdsverkets Nationella marktäckedata (NMD)</li>
-          <li>Jordart (morän, lera, isälvssediment m.m.) från SGU — kompletterar skogstypen, bland annat för kalkgynnade arter</li>
-          <li>Historiska fynd från Artportalen — används för att åldersvikta kända platser och för att forma säsongen ovan</li>
+          <li>Jordart (morän, lera, isälvssediment m.m.) från Sveriges Geologiska Undersökning (SGU). Detta kompletterar skogstypen, bland annat för kalkgynnade arter</li>
+          <li>Historiska fynd från Artportalen. Detta används för att åldersvikta kända platser och för att att mäta lämplig säsong.</li>
         </ul>
       </div>
     </div>
