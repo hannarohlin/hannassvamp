@@ -1,0 +1,17 @@
+name: Håll backend vaken
+
+# Pingar Render-backendens /health var 10:e minut (under Renders
+# 15-minuters-gräns för att somna) så att den ackumulerande disk-cachen
+# aldrig nollställs av att containern stängs av/startas om i onödan —
+# se README "Prestanda och robusthet".
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pinga /health
+        run: curl -sf https://hannassvamp.onrender.com/health
