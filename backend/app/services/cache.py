@@ -14,7 +14,12 @@ import json
 import time
 from pathlib import Path
 
-CACHE_DIR = Path(__file__).resolve().parent.parent.parent / ".cache"
+from app.config import settings
+
+# `settings.cache_dir` pekar mot en monterad, beständig volym i produktion
+# (se config.py) — tom sträng (lokal utveckling) faller tillbaka på en
+# katalog bredvid koden, som tidigare.
+CACHE_DIR = Path(settings.cache_dir) if settings.cache_dir else Path(__file__).resolve().parent.parent.parent / ".cache"
 CACHE_FILE = CACHE_DIR / "prediction_cache.json"
 
 # NMD-marktäckedata uppdateras av Naturvårdsverket ungefär vart 5:e år —

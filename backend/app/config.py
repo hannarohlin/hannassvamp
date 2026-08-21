@@ -92,5 +92,13 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["http://localhost:5500", "http://127.0.0.1:5500"]
 
+    # Tom sträng = använd standardplatsen bredvid koden (backend/.cache),
+    # bra för lokal utveckling. I produktion på en plattform med
+    # ephemeral filsystem (t.ex. Railway) MÅSTE detta istället pekas mot
+    # en monterad, beständig volym (t.ex. "/data/.cache") — annars
+    # nollställs cachen vid varje omdeploy/omstart och hela poängen med
+    # de långa TTL:erna (30/90 dagar för NMD/SGU) går förlorad.
+    cache_dir: str = ""
+
 
 settings = Settings()
